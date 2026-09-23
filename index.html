@@ -1,42 +1,418 @@
 <!DOCTYPE html>
 <html lang="en-us">
-  <head>
+<head>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <title>Among Us</title>
-    <link rel="shortcut icon" href="TemplateData/favicon.ico">
+    <link rel="shortcut icon"
+          href="https://static.wikia.nocookie.net/logopedia/images/3/39/Icons8-among-us.svg/revision/latest/scale-to-width-down/250?cb=20210718140353">
     <link rel="stylesheet" href="TemplateData/style.css">
     <script src="TemplateData/UnityProgress.js"></script>
     <script src="Build/UnityLoader.js"></script>
     <style>
-      html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }
-      .webgl-content { width: 100%; height: 100%; margin: 0; position: absolute; top: 0; left: 0; transform: none; }
-      #gameContainer { width: 100% !important; height: 100% !important; position: absolute; top: 0; left: 0; }
-      #gameContainer canvas { width: 100vw !important; height: 100vh !important; display: block; object-fit: fill !important; }
-      .footer { display: none !important; }
-      .progress { position: absolute !important; top: 50% !important; left: 50% !important; transform: translate(-50%, -50%); }
-      #unityLogo { position: absolute; top: 42%; left: 50%; transform: translate(-50%, -50%); z-index: 5; pointer-events: none; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000;
+            font-family: 'Inter', sans-serif;
+            text-align: center;
+        }
+
+        .webgl-content {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            position: absolute;
+            top: 0;
+            left: 0;
+            transform: none;
+        }
+
+        #gameContainer {
+            width: 100% !important;
+            height: 100% !important;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        #gameContainer canvas {
+            width: 100vw !important;
+            height: 100vh !important;
+            display: block;
+            object-fit: fill !important;
+        }
+
+        .footer,
+        #unity-footer,
+        #unity-progress-bar-empty,
+        #unity-progress-bar-full,
+        #unity-logo,
+        #unity-build-title,
+        #unity-warning,
+        .progress { display: none !important; }
+
+        #loading-screen {
+            position: fixed;
+            inset: 0;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            padding-bottom: 48px;
+            z-index: 1000;
+            overflow: hidden;
+            transition: opacity 0.45s ease;
+        }
+
+        .bg-layer {
+            position: absolute;
+            inset: 0;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            filter: blur(10px) brightness(0.55) grayscale(0.85);
+            transform: scale(1.08);
+        }
+
+        .center-logo {
+            position: absolute;
+            top: 32%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 3;
+            width: min(460px, 70vw);
+            height: auto;
+            pointer-events: none;
+            user-select: none;
+            filter:
+                drop-shadow(0 8px 24px rgba(0, 0, 0, 0.9))
+                drop-shadow(0 0 2px rgba(0, 0, 0, 0.95))
+                grayscale(1) brightness(1.15);
+        }
+
+        #loading-screen.fade-out { opacity: 0; pointer-events: none; }
+        #loading-screen.hidden { display: none; }
+
+        .loading-content {
+            position: relative;
+            z-index: 2;
+            width: 90%;
+            max-width: 560px;
+            padding: 28px 30px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            background: rgba(10, 10, 12, 0.72);
+            border: 1px solid rgba(255, 255, 255, 0.10);
+            border-radius: 24px;
+            backdrop-filter: blur(20px) saturate(40%);
+            -webkit-backdrop-filter: blur(20px) saturate(40%);
+            box-shadow:
+                0 24px 60px rgba(0, 0, 0, 0.85),
+                0 0 0 1px rgba(255, 255, 255, 0.03) inset,
+                0 2px 0 rgba(255, 255, 255, 0.05) inset;
+        }
+
+        .loading-header {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            width: 100%;
+            gap: 12px;
+        }
+
+        .title-group { display: flex; align-items: center; gap: 12px; min-width: 0; }
+
+        .mini-favicon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+            flex-shrink: 0;
+            object-fit: contain;
+            filter: grayscale(1) brightness(1.1);
+        }
+
+        .loading-title {
+            color: #fff;
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.9);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .loading-bar-container {
+            position: relative;
+            width: 100%;
+            height: 12px;
+            background: #05050a;
+            border-radius: 999px;
+            overflow: hidden;
+            box-shadow:
+                inset 0 1px 4px rgba(0,0,0,0.9),
+                0 0 0 1px rgba(255,255,255,0.06),
+                0 0 12px rgba(255,255,255,0.04);
+        }
+
+        .loading-bar-container::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image:
+                radial-gradient(1px 1px at 10% 50%, rgba(255,255,255,0.55), transparent),
+                radial-gradient(1px 1px at 25% 30%, rgba(255,255,255,0.35), transparent),
+                radial-gradient(1px 1px at 45% 70%, rgba(255,255,255,0.45), transparent),
+                radial-gradient(1px 1px at 65% 40%, rgba(255,255,255,0.40), transparent),
+                radial-gradient(1px 1px at 85% 60%, rgba(255,255,255,0.50), transparent);
+            background-size: 100% 100%;
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        .loading-bar {
+            position: relative;
+            width: 0%;
+            height: 100%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #1a1a1f 0%, #d9d9e0 50%, #ffffff 100%);
+            background-size: 200% 100%;
+            animation: bar-shift 3s linear infinite;
+            transition: width 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+            box-shadow:
+                0 0 14px rgba(255,255,255,0.55),
+                0 0 28px rgba(255,255,255,0.20),
+                inset 0 1px 0 rgba(255,255,255,0.9);
+            overflow: hidden;
+        }
+
+        .loading-bar::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image:
+                radial-gradient(1px 1px at 15% 50%, #fff, transparent),
+                radial-gradient(1px 1px at 35% 30%, #fff, transparent),
+                radial-gradient(1px 1px at 55% 70%, #fff, transparent),
+                radial-gradient(1px 1px at 75% 40%, #fff, transparent),
+                radial-gradient(1px 1px at 92% 60%, #fff, transparent);
+            background-size: 200% 100%;
+            opacity: 0.9;
+            animation: stars-drift 4s linear infinite;
+            pointer-events: none;
+            mix-blend-mode: screen;
+        }
+
+        .loading-bar::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            right: 0;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            transform: translate(50%, -50%);
+            background: #fff;
+            box-shadow:
+                0 0 10px #fff,
+                0 0 22px rgba(255,255,255,0.85),
+                0 0 40px rgba(255,255,255,0.45);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 2;
+        }
+
+        .loading-bar.active::before { opacity: 1; }
+
+        @keyframes bar-shift {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 200% 0%; }
+        }
+
+        @keyframes stars-drift {
+            0% { background-position: 0% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        .status-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            margin-top: 2px;
+        }
+
+        .loading-text {
+            font-size: 13px;
+            color: rgba(255,255,255,0.9);
+            font-weight: 500;
+            letter-spacing: 0.2px;
+            text-shadow: 0 2px 6px rgba(0,0,0,0.9);
+            height: 1.2em;
+        }
+
+        .loading-percent {
+            font-size: 14px;
+            font-weight: 800;
+            color: #ffffff;
+            font-variant-numeric: tabular-nums;
+            text-shadow: 0 0 12px rgba(255,255,255,0.55), 0 2px 6px rgba(0,0,0,0.9);
+            background: rgba(255, 255, 255, 0.08);
+            padding: 4px 12px;
+            border-radius: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            line-height: 1;
+        }
+
+        .loading-dots {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 2px;
+        }
+
+        .dot {
+            width: 5px;
+            height: 5px;
+            background: rgba(255,255,255,0.9);
+            border-radius: 50%;
+            animation: dot-pulse 1.4s infinite ease-in-out;
+            box-shadow: 0 0 8px rgba(255,255,255,0.65), 0 0 2px rgba(0,0,0,0.9);
+        }
+
+        .dot:nth-child(2) { animation-delay: 0.18s; }
+        .dot:nth-child(3) { animation-delay: 0.36s; }
+
+        @keyframes dot-pulse {
+            0%, 100% { opacity: 0.25; transform: scale(0.75); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
     </style>
-    <script>
-      var gameInstance = UnityLoader.instantiate("gameContainer", "Build/AmongUSWebPortByTSProllyFinalBuild9.json", {onProgress: function(g, p){ UnityProgress(g, p); if (p === 1) { var l = document.getElementById("unityLogo"); if (l) l.style.display = "none"; } }});
-      function forceFill() {
-        var c = document.querySelector("#gameContainer canvas");
-        if (!c) { console.log("[fill] no canvas yet"); return; }
-        var w = window.innerWidth, h = window.innerHeight;
-        c.width = w; c.height = h;
-        c.style.setProperty("width", "100vw", "important");
-        c.style.setProperty("height", "100vh", "important");
-        console.log("[fill] set", w, h, "-> now", c.width, c.height);
-      }
-      window.addEventListener("resize", forceFill);
-      setInterval(forceFill, 250);
-	  
-	  window.serverurl = "wss://nostaligafun.pages.dev";
-    </script>
-  </head>
-  <body>
+</head>
+<body>
     <div class="webgl-content">
-      <div id="gameContainer"></div>
+        <div id="gameContainer"></div>
     </div>
-  </body>
+
+    <div id="loading-screen">
+        <div class="bg-layer" id="bg"></div>
+
+        <img class="center-logo"
+             src="https://logos-world.net/wp-content/uploads/2021/08/Among-Us-Symbol.png"
+             alt="Among Us">
+
+        <div class="loading-content">
+            <div class="loading-header">
+                <div class="title-group">
+                    <img src="https://static.wikia.nocookie.net/logopedia/images/3/39/Icons8-among-us.svg/revision/latest/scale-to-width-down/250?cb=20210718140353"
+                         class="mini-favicon" alt="icon">
+                    <div class="loading-title">Among Us</div>
+                </div>
+            </div>
+
+            <div class="loading-bar-container">
+                <div class="loading-bar" id="loading-bar"></div>
+            </div>
+
+            <div class="status-row">
+                <div class="loading-text" id="loading-text">Initializing…</div>
+                <div class="loading-percent" id="loading-percent">0%</div>
+            </div>
+
+            <div class="loading-dots">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var loadingBar = document.getElementById('loading-bar');
+        var loadingText = document.getElementById('loading-text');
+        var loadingPercent = document.getElementById('loading-percent');
+        var loadingScreen = document.getElementById('loading-screen');
+
+        var BACKGROUNDS = [
+            "https://wallpapers.com/images/featured/among-us-cb21ldue3llceiua.jpg",
+            "https://cdn.wallpapersafari.com/65/18/l8Fs1N.jpg",
+            "https://wallpapercave.com/wp/wp15590897.jpg"
+        ];
+
+        function pickBackground() {
+            var last = sessionStorage.getItem('lastBg');
+            var index;
+            do {
+                index = Math.floor(Math.random() * BACKGROUNDS.length);
+            } while (BACKGROUNDS.length > 1 && String(index) === last);
+            sessionStorage.setItem('lastBg', String(index));
+            return BACKGROUNDS[index];
+        }
+
+        document.getElementById('bg').style.backgroundImage =
+            'url("' + pickBackground() + '")';
+
+        function setProgress(percent) {
+            percent = Math.max(0, Math.min(100, percent));
+            loadingBar.style.width = percent + '%';
+            loadingPercent.textContent = Math.round(percent) + '%';
+            if (percent > 0 && percent < 100) loadingBar.classList.add('active');
+            else if (percent >= 100) loadingBar.classList.remove('active');
+        }
+
+        function finishLoading() {
+            setProgress(100);
+            loadingText.textContent = 'Ready!';
+            setTimeout(function() {
+                loadingScreen.classList.add('fade-out');
+                loadingScreen.addEventListener('transitionend', function() {
+                    loadingScreen.classList.add('hidden');
+                }, { once: true });
+            }, 700);
+        }
+
+        function UnityProgress(gameInstance, progress) {
+            if (!gameInstance.Module) return;
+            var p = Math.round(progress * 100);
+            setProgress(p);
+            if (p < 20) loadingText.textContent = "Loading engine…";
+            else if (p < 60) loadingText.textContent = "Downloading game data…";
+            else if (p < 90) loadingText.textContent = "Assembling data…";
+            else loadingText.textContent = "Almost there…";
+            if (progress === 1) {
+                finishLoading();
+                var l = document.getElementById("unityLogo");
+                if (l) l.style.display = "none";
+            }
+        }
+
+        var gameInstance = UnityLoader.instantiate(
+            "gameContainer",
+            "Build/AmongUSWebPortByTSProllyFinalBuild9.json",
+            { onProgress: UnityProgress }
+        );
+
+        function forceFill() {
+            var c = document.querySelector("#gameContainer canvas");
+            if (!c) return;
+            var w = window.innerWidth, h = window.innerHeight;
+            c.width = w; c.height = h;
+            c.style.setProperty("width", "100vw", "important");
+            c.style.setProperty("height", "100vh", "important");
+        }
+        window.addEventListener("resize", forceFill);
+        setInterval(forceFill, 250);
+
+        window.serverurl = "wss://nostaligafun.pages.dev";
+    </script>
+</body>
 </html>
