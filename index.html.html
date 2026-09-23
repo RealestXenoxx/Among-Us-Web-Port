@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Among Us · Legacy</title>
+
+  <link rel="icon" type="image/svg+xml"
+        href="https://static.wikia.nocookie.net/logopedia/images/3/39/Icons8-among-us.svg/revision/latest/scale-to-width-down/250?cb=20210718140353" />
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #000;
+      font-family: 'Inter', sans-serif;
+      text-align: center;
+    }
+
+    #output { display: none; }
+
+    #loading-screen {
+      position: fixed;
+      inset: 0;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      padding-bottom: 48px;
+      z-index: 1000;
+      overflow: hidden;
+      transition: opacity 0.45s ease;
+    }
+
+    .bg-layer {
+      position: absolute;
+      inset: 0;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      filter: blur(12px) brightness(0.6);
+      transform: scale(1.08);
+      opacity: 0.8;
+    }
+
+    .center-logo {
+      position: absolute;
+      top: 32%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 3;
+      width: min(640px, 85vw);
+      height: auto;
+      pointer-events: none;
+      user-select: none;
+      filter:
+        drop-shadow(0 8px 24px rgba(0, 0, 0, 0.9))
+        drop-shadow(0 0 4px rgba(0, 0, 0, 0.95));
+    }
+
+    #loading-screen.fade-out { opacity: 0; pointer-events: none; }
+    #loading-screen.hidden { display: none; }
+
+    .loading-content {
+      position: relative;
+      z-index: 2;
+      width: 90%;
+      max-width: 560px;
+      padding: 28px 30px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      background: rgba(8, 8, 10, 0.78);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 24px;
+      backdrop-filter: blur(20px) saturate(0%);
+      -webkit-backdrop-filter: blur(20px) saturate(0%);
+      box-shadow:
+        0 24px 60px rgba(0, 0, 0, 0.9),
+        0 0 0 1px rgba(255, 255, 255, 0.02) inset,
+        0 2px 0 rgba(255, 255, 255, 0.03) inset;
+    }
+
+    .loading-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      gap: 12px;
+    }
+
+    .title-group { display: flex; align-items: center; gap: 12px; min-width: 0; }
+
+    .mini-favicon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.7);
+      flex-shrink: 0;
+      object-fit: cover;
+    }
+
+    .loading-title {
+      color: #eee;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      text-shadow: 0 2px 8px rgba(0,0,0,1);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      filter: grayscale(1);
+    }
+
+    .loading-mb {
+      color: rgba(220,220,220,0.9);
+      font-size: 12.5px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      text-shadow: 0 2px 6px rgba(0,0,0,1);
+      background: rgba(255,255,255,0.04);
+      padding: 4px 12px;
+      border-radius: 40px;
+      border: 1px solid rgba(255,255,255,0.06);
+      filter: grayscale(1);
+    }
+
+    .loading-bar-container {
+      position: relative;
+      width: 100%;
+      height: 10px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 999px;
+      overflow: hidden;
+      box-shadow: inset 0 1px 4px rgba(0,0,0,0.9), 0 0 0 1px rgba(255,255,255,0.02);
+    }
+
+    .loading-bar {
+      position: relative;
+      width: 0%;
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #222 0%, #888 50%, #222 100%);
+      background-size: 200% 100%;
+      animation: bar-shift 2.8s linear infinite;
+      transition: width 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+      box-shadow: 0 0 12px rgba(200,200,200,0.2), 0 0 28px rgba(150,150,150,0.1);
+      filter: grayscale(1);
+    }
+
+    .loading-bar::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 999px;
+      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.5) 50%, transparent 100%);
+      background-size: 40% 100%;
+      background-repeat: no-repeat;
+      animation: shimmer 2.0s ease-in-out infinite;
+      pointer-events: none;
+      filter: grayscale(1);
+    }
+
+    .loading-bar::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      right: 0;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      transform: translate(50%, -50%);
+      background: #fff;
+      box-shadow: 0 0 10px #fff, 0 0 22px #aaa;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      filter: grayscale(1);
+    }
+
+    .loading-bar.active::before { opacity: 1; }
+
+    @keyframes bar-shift {
+      0% { background-position: 0% 0%; }
+      100% { background-position: 200% 0%; }
+    }
+
+    @keyframes shimmer {
+      0% { background-position: -50% 0; }
+      100% { background-position: 150% 0; }
+    }
+
+    .loading-bar-dots {
+      position: absolute;
+      inset: 0;
+      border-radius: 999px;
+      pointer-events: none;
+      overflow: hidden;
+      opacity: 0.7;
+      mix-blend-mode: screen;
+      filter: grayscale(1);
+    }
+
+    .loading-bar-dots::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(circle, #ccc 1px, transparent 1px);
+      background-size: 8px 8px;
+      background-position: 0 0;
+      animation: dot-flow 3.5s linear infinite;
+      opacity: 0.8;
+    }
+
+    @keyframes dot-flow {
+      0% { background-position: 0 0; }
+      100% { background-position: 80px 0; }
+    }
+
+    .status-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      margin-top: 2px;
+    }
+
+    .loading-text {
+      font-size: 13px;
+      color: rgba(220,220,220,0.95);
+      font-weight: 500;
+      letter-spacing: 0.2px;
+      text-shadow: 0 2px 6px rgba(0,0,0,1);
+      height: 1.2em;
+      filter: grayscale(1);
+    }
+
+    .loading-percent {
+      font-size: 14px;
+      font-weight: 800;
+      color: #d0d0d0;
+      font-variant-numeric: tabular-nums;
+      text-shadow: 0 0 10px rgba(200,200,200,0.3), 0 2px 6px rgba(0,0,0,1);
+      background: rgba(255, 255, 255, 0.04);
+      padding: 4px 12px;
+      border-radius: 40px;
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      line-height: 1;
+      filter: grayscale(1);
+    }
+
+    .loading-dots {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 2px;
+    }
+
+    .dot {
+      width: 5px;
+      height: 5px;
+      background: #ccc;
+      border-radius: 50%;
+      animation: dot-pulse 1.4s infinite ease-in-out;
+      box-shadow: 0 0 8px rgba(200,200,200,0.5), 0 0 2px rgba(0,0,0,1);
+      filter: grayscale(1);
+    }
+
+    .dot:nth-child(2) { animation-delay: 0.18s; }
+    .dot:nth-child(3) { animation-delay: 0.36s; }
+
+    @keyframes dot-pulse {
+      0%, 100% { opacity: 0.25; transform: scale(0.75); }
+      50% { opacity: 1; transform: scale(1.2); }
+    }
+
+    #game-frame {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+      background: #000;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+
+  <textarea id="output" rows="8"></textarea>
+
+  <div id="loading-screen">
+    <div class="bg-layer" id="bg"></div>
+
+    <img class="center-logo"
+         src="https://static.wikia.nocookie.net/disneyfanon/images/8/83/49EF6F10-40D3-4537-8833-819406CB00D2.png/revision/latest?cb=20210520201231"
+         alt="Among Us Legacy">
+
+    <div class="loading-content">
+      <div class="loading-header">
+        <div class="title-group">
+          <img src="https://static.wikia.nocookie.net/logopedia/images/3/39/Icons8-among-us.svg/revision/latest/scale-to-width-down/250?cb=20210718140353"
+               class="mini-favicon" alt="icon">
+          <div class="loading-title">Among Us · Legacy</div>
+        </div>
+        <div class="loading-mb" id="mb-text">0.0 / 42.5 MB</div>
+      </div>
+
+      <div class="loading-bar-container">
+        <div class="loading-bar" id="loading-bar"></div>
+        <div class="loading-bar-dots"></div>
+      </div>
+
+      <div class="status-row">
+        <div class="loading-text" id="loading-text">Initializing…</div>
+        <div class="loading-percent" id="loading-percent">0%</div>
+      </div>
+
+      <div class="loading-dots">
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+      </div>
+    </div>
+  </div>
+
+  <iframe id="game-frame" src="https://wasm.rip/files/amongus/legacy/"
+          allow="autoplay; fullscreen; gamepad; xr-spatial-tracking"
+          title="Among Us Legacy"></iframe>
+
+  <script>
+    (function() {
+      const TOTAL_SIZE_MB = 42.5;
+
+      const BG_IMAGES = [
+        'https://wallpapers.com/images/featured/among-us-cb21ldue3llceiua.jpg',
+        'https://wallpapercave.com/wp/wp7782554.jpg'
+      ];
+
+      const loadingBar = document.getElementById('loading-bar');
+      const loadingText = document.getElementById('loading-text');
+      const loadingPercent = document.getElementById('loading-percent');
+      const mbText = document.getElementById('mb-text');
+      const loadingScreen = document.getElementById('loading-screen');
+      const gameFrame = document.getElementById('game-frame');
+
+      function pickBackground() {
+        const last = sessionStorage.getItem('lastBgAmong');
+        let index;
+        do {
+          index = Math.floor(Math.random() * BG_IMAGES.length);
+        } while (BG_IMAGES.length > 1 && String(index) === last);
+        sessionStorage.setItem('lastBgAmong', String(index));
+        return BG_IMAGES[index];
+      }
+      document.getElementById('bg').style.backgroundImage =
+        'url("' + pickBackground() + '")';
+
+      let progress = 0;
+      const interval = setInterval(() => {
+        progress += Math.random() * 8 + 4;
+        if (progress > 100) progress = 100;
+
+        loadingBar.style.width = progress + '%';
+        loadingPercent.textContent = Math.round(progress) + '%';
+        mbText.textContent = (progress / 100 * TOTAL_SIZE_MB).toFixed(1) + ' / ' + TOTAL_SIZE_MB.toFixed(1) + ' MB';
+
+        if (progress > 0 && progress < 100) loadingBar.classList.add('active');
+        else if (progress >= 100) loadingBar.classList.remove('active');
+
+        if (progress < 30) loadingText.textContent = 'Loading engine…';
+        else if (progress < 70) loadingText.textContent = 'Downloading assets…';
+        else if (progress < 100) loadingText.textContent = 'Almost there…';
+        else loadingText.textContent = 'Ready!';
+
+        if (progress >= 100) {
+          clearInterval(interval);
+          setTimeout(() => {
+            loadingScreen.classList.add('fade-out');
+            loadingScreen.addEventListener('transitionend', function() {
+              loadingScreen.classList.add('hidden');
+            }, { once: true });
+          }, 800);
+        }
+      }, 120);
+
+      (function() {
+        const DESIRED_TITLE = 'Among Us · Legacy';
+        const titleEl = document.querySelector('title');
+        if (titleEl && titleEl.textContent !== DESIRED_TITLE) titleEl.textContent = DESIRED_TITLE;
+        const observer = new MutationObserver(() => {
+          if (document.title !== DESIRED_TITLE) document.title = DESIRED_TITLE;
+        });
+        observer.observe(titleEl, { childList: true, characterData: true, subtree: true });
+        const headObserver = new MutationObserver(() => {
+          if (document.title !== DESIRED_TITLE) document.title = DESIRED_TITLE;
+        });
+        headObserver.observe(document.head, { childList: true, subtree: true });
+      })();
+
+    })();
+  </script>
+</body>
+</html>
