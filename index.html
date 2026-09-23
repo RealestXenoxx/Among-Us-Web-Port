@@ -7,7 +7,7 @@
   <title>Among Us · Legacy</title>
 
   <link rel="icon" type="image/svg+xml"
-        href="https://static.wikia.nocookie.net/logopedia/images/3/39/Icons8-among-us.svg/revision/latest/scale-to-width-down/250?cb=20210718140353" />
+        href="https://images.weserv.nl/?url=static.wikia.nocookie.net/logopedia/images/3/39/Icons8-among-us.svg/revision/latest/scale-to-width-down/250%3Fcb%3D20210718140353" />
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
@@ -45,9 +45,8 @@
       background-size: cover;
       background-position: center;
       background-repeat: no-repeat;
-      filter: blur(12px) brightness(0.6);
+      filter: blur(10px) brightness(0.7);
       transform: scale(1.08);
-      opacity: 0.8;
     }
 
     .center-logo {
@@ -56,13 +55,13 @@
       left: 50%;
       transform: translate(-50%, -50%);
       z-index: 3;
-      width: min(640px, 85vw);
+      width: min(560px, 80vw);
       height: auto;
       pointer-events: none;
       user-select: none;
       filter:
-        drop-shadow(0 8px 24px rgba(0, 0, 0, 0.9))
-        drop-shadow(0 0 4px rgba(0, 0, 0, 0.95));
+        drop-shadow(0 8px 24px rgba(0, 0, 0, 0.75))
+        drop-shadow(0 0 2px rgba(0, 0, 0, 0.9));
     }
 
     #loading-screen.fade-out { opacity: 0; pointer-events: none; }
@@ -77,15 +76,15 @@
       display: flex;
       flex-direction: column;
       gap: 16px;
-      background: rgba(8, 8, 10, 0.78);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(16, 18, 26, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.10);
       border-radius: 24px;
-      backdrop-filter: blur(20px) saturate(0%);
-      -webkit-backdrop-filter: blur(20px) saturate(0%);
+      backdrop-filter: blur(20px) saturate(160%);
+      -webkit-backdrop-filter: blur(20px) saturate(160%);
       box-shadow:
-        0 24px 60px rgba(0, 0, 0, 0.9),
-        0 0 0 1px rgba(255, 255, 255, 0.02) inset,
-        0 2px 0 rgba(255, 255, 255, 0.03) inset;
+        0 24px 60px rgba(0, 0, 0, 0.70),
+        0 0 0 1px rgba(255, 255, 255, 0.03) inset,
+        0 2px 0 rgba(255, 255, 255, 0.05) inset;
     }
 
     .loading-header {
@@ -102,45 +101,43 @@
       width: 32px;
       height: 32px;
       border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.7);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
       flex-shrink: 0;
       object-fit: cover;
     }
 
     .loading-title {
-      color: #eee;
+      color: #fff;
       font-size: 15px;
       font-weight: 700;
       letter-spacing: 0.3px;
-      text-shadow: 0 2px 8px rgba(0,0,0,1);
+      text-shadow: 0 2px 8px rgba(0,0,0,0.9);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      filter: grayscale(1);
     }
 
     .loading-mb {
-      color: rgba(220,220,220,0.9);
+      color: rgba(255,255,255,0.85);
       font-size: 12.5px;
       font-weight: 600;
       font-variant-numeric: tabular-nums;
       white-space: nowrap;
-      text-shadow: 0 2px 6px rgba(0,0,0,1);
-      background: rgba(255,255,255,0.04);
+      text-shadow: 0 2px 6px rgba(0,0,0,0.9);
+      background: rgba(255,255,255,0.06);
       padding: 4px 12px;
       border-radius: 40px;
-      border: 1px solid rgba(255,255,255,0.06);
-      filter: grayscale(1);
+      border: 1px solid rgba(255,255,255,0.08);
     }
 
     .loading-bar-container {
       position: relative;
       width: 100%;
       height: 10px;
-      background: rgba(255,255,255,0.05);
+      background: rgba(255,255,255,0.07);
       border-radius: 999px;
       overflow: hidden;
-      box-shadow: inset 0 1px 4px rgba(0,0,0,0.9), 0 0 0 1px rgba(255,255,255,0.02);
+      box-shadow: inset 0 1px 4px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04);
     }
 
     .loading-bar {
@@ -150,9 +147,9 @@
       border-radius: 999px;
       background: linear-gradient(90deg, #222 0%, #888 50%, #222 100%);
       background-size: 200% 100%;
-      animation: bar-shift 2.8s linear infinite;
+      animation: bar-shift 2.5s linear infinite;
       transition: width 0.55s cubic-bezier(0.22, 1, 0.36, 1);
-      box-shadow: 0 0 12px rgba(200,200,200,0.2), 0 0 28px rgba(150,150,150,0.1);
+      box-shadow: 0 0 16px rgba(200,200,200,0.3), 0 0 32px rgba(150,150,150,0.15);
       filter: grayscale(1);
     }
 
@@ -161,10 +158,10 @@
       position: absolute;
       inset: 0;
       border-radius: 999px;
-      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.5) 50%, transparent 100%);
+      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.7) 50%, transparent 100%);
       background-size: 40% 100%;
       background-repeat: no-repeat;
-      animation: shimmer 2.0s ease-in-out infinite;
+      animation: shimmer 1.8s ease-in-out infinite;
       pointer-events: none;
       filter: grayscale(1);
     }
@@ -179,7 +176,7 @@
       border-radius: 50%;
       transform: translate(50%, -50%);
       background: #fff;
-      box-shadow: 0 0 10px #fff, 0 0 22px #aaa;
+      box-shadow: 0 0 10px #fff, 0 0 24px #aaa;
       opacity: 0;
       transition: opacity 0.3s ease;
       filter: grayscale(1);
@@ -234,10 +231,10 @@
 
     .loading-text {
       font-size: 13px;
-      color: rgba(220,220,220,0.95);
+      color: rgba(255,255,255,0.9);
       font-weight: 500;
       letter-spacing: 0.2px;
-      text-shadow: 0 2px 6px rgba(0,0,0,1);
+      text-shadow: 0 2px 6px rgba(0,0,0,0.9);
       height: 1.2em;
       filter: grayscale(1);
     }
@@ -247,11 +244,11 @@
       font-weight: 800;
       color: #d0d0d0;
       font-variant-numeric: tabular-nums;
-      text-shadow: 0 0 10px rgba(200,200,200,0.3), 0 2px 6px rgba(0,0,0,1);
-      background: rgba(255, 255, 255, 0.04);
+      text-shadow: 0 0 12px rgba(200,200,200,0.4), 0 2px 6px rgba(0,0,0,0.9);
+      background: rgba(255,255,255,0.08);
       padding: 4px 12px;
       border-radius: 40px;
-      border: 1px solid rgba(255, 255, 255, 0.10);
+      border: 1px solid rgba(255,255,255,0.15);
       line-height: 1;
       filter: grayscale(1);
     }
@@ -266,10 +263,10 @@
     .dot {
       width: 5px;
       height: 5px;
-      background: #ccc;
+      background: rgba(255,255,255,0.9);
       border-radius: 50%;
       animation: dot-pulse 1.4s infinite ease-in-out;
-      box-shadow: 0 0 8px rgba(200,200,200,0.5), 0 0 2px rgba(0,0,0,1);
+      box-shadow: 0 0 8px rgba(200,200,200,0.6), 0 0 2px rgba(0,0,0,0.9);
       filter: grayscale(1);
     }
 
@@ -300,14 +297,14 @@
     <div class="bg-layer" id="bg"></div>
 
     <img class="center-logo"
-         src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Among_Us_Logo.svg/1280px-Among_Us_Logo.svg.png"
+         src="https://images.weserv.nl/?url=static.wikia.nocookie.net/disneyfanon/images/8/83/49EF6F10-40D3-4537-8833-819406CB00D2.png/revision/latest%3Fcb%3D20210520201231"
          alt="Among Us Legacy"
-         onerror="this.src='https://static.wikia.nocookie.net/logopedia/images/3/39/Icons8-among-us.svg/revision/latest/scale-to-width-down/250?cb=20210718140353'">
+         onerror="this.src='https://images.weserv.nl/?url=static.wikia.nocookie.net/logopedia/images/3/39/Icons8-among-us.svg/revision/latest/scale-to-width-down/250%3Fcb%3D20210718140353'">
 
     <div class="loading-content">
       <div class="loading-header">
         <div class="title-group">
-          <img src="https://static.wikia.nocookie.net/logopedia/images/3/39/Icons8-among-us.svg/revision/latest/scale-to-width-down/250?cb=20210718140353"
+          <img src="https://images.weserv.nl/?url=static.wikia.nocookie.net/logopedia/images/3/39/Icons8-among-us.svg/revision/latest/scale-to-width-down/250%3Fcb%3D20210718140353"
                class="mini-favicon" alt="icon">
           <div class="loading-title">Among Us · Legacy</div>
         </div>
@@ -340,32 +337,32 @@
     (function() {
       const TOTAL_SIZE_MB = 42.5;
 
-      const BG_IMAGES = [
-        'https://wallpapers.com/images/featured/among-us-cb21ldue3llceiua.jpg',
-        'https://wallpapercave.com/wp/wp7782554.jpg'
+      const BACKGROUNDS = [
+        "https://images.weserv.nl/?url=wallpapers.com/images/featured/among-us-cb21ldue3llceiua.jpg",
+        "https://images.weserv.nl/?url=wallpapercave.com/wp/wp7782554.jpg"
       ];
+
+      function pickBackground() {
+        const last = sessionStorage.getItem('lastBgAmong');
+        let index;
+        do {
+          index = Math.floor(Math.random() * BACKGROUNDS.length);
+        } while (BACKGROUNDS.length > 1 && String(index) === last);
+        sessionStorage.setItem('lastBgAmong', String(index));
+        return BACKGROUNDS[index];
+      }
+
+      document.getElementById('bg').style.backgroundImage =
+        'url("' + pickBackground() + '")';
 
       const loadingBar = document.getElementById('loading-bar');
       const loadingText = document.getElementById('loading-text');
       const loadingPercent = document.getElementById('loading-percent');
       const mbText = document.getElementById('mb-text');
       const loadingScreen = document.getElementById('loading-screen');
-      const gameFrame = document.getElementById('game-frame');
-
-      function pickBackground() {
-        const last = sessionStorage.getItem('lastBgAmong');
-        let index;
-        do {
-          index = Math.floor(Math.random() * BG_IMAGES.length);
-        } while (BG_IMAGES.length > 1 && String(index) === last);
-        sessionStorage.setItem('lastBgAmong', String(index));
-        return BG_IMAGES[index];
-      }
-      document.getElementById('bg').style.backgroundImage =
-        'url("' + pickBackground() + '")';
 
       let progress = 0;
-      const interval = setInterval(() => {
+      const interval = setInterval(function() {
         progress += Math.random() * 8 + 4;
         if (progress > 100) progress = 100;
 
@@ -383,7 +380,7 @@
 
         if (progress >= 100) {
           clearInterval(interval);
-          setTimeout(() => {
+          setTimeout(function() {
             loadingScreen.classList.add('fade-out');
             loadingScreen.addEventListener('transitionend', function() {
               loadingScreen.classList.add('hidden');
@@ -393,15 +390,21 @@
       }, 120);
 
       (function() {
-        const DESIRED_TITLE = 'Among Us · Legacy';
-        const titleEl = document.querySelector('title');
-        if (titleEl && titleEl.textContent !== DESIRED_TITLE) titleEl.textContent = DESIRED_TITLE;
-        const observer = new MutationObserver(() => {
-          if (document.title !== DESIRED_TITLE) document.title = DESIRED_TITLE;
+        var DESIRED_TITLE = 'Among Us · Legacy';
+        var titleEl = document.querySelector('title');
+        if (titleEl && titleEl.textContent !== DESIRED_TITLE) {
+          titleEl.textContent = DESIRED_TITLE;
+        }
+        var observer = new MutationObserver(function() {
+          if (document.title !== DESIRED_TITLE) {
+            document.title = DESIRED_TITLE;
+          }
         });
         observer.observe(titleEl, { childList: true, characterData: true, subtree: true });
-        const headObserver = new MutationObserver(() => {
-          if (document.title !== DESIRED_TITLE) document.title = DESIRED_TITLE;
+        var headObserver = new MutationObserver(function() {
+          if (document.title !== DESIRED_TITLE) {
+            document.title = DESIRED_TITLE;
+          }
         });
         headObserver.observe(document.head, { childList: true, subtree: true });
       })();
