@@ -26,6 +26,7 @@
 
     #output { display: none; }
 
+    /* Modern (Latest) renders into this canvas directly */
     #game-canvas {
       display: block;
       position: fixed;
@@ -44,6 +45,30 @@
     #game-canvas.visible {
       visibility: visible;
       opacity: 1;
+    }
+
+    /* Legacy creates its own canvas inside this container */
+    #unity-container {
+      position: fixed;
+      inset: 0;
+      z-index: 5;
+      background: #000;
+      visibility: hidden;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+
+    #unity-container.visible {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    #unity-container canvas {
+      display: block !important;
+      width: 100% !important;
+      height: 100% !important;
+      border: 0 !important;
+      outline: 0 !important;
     }
 
     #loading-screen {
@@ -389,6 +414,7 @@
 </head>
 <body>
 
+  <div id="unity-container"></div>
   <canvas id="game-canvas" tabindex="-1"></canvas>
 
   <div id="loading-screen">
@@ -453,6 +479,7 @@
             "https://static0.colliderimages.com/wordpress/wp-content/uploads/2024/03/among-us-social-featured.jpg"
           ],
           loaderScript: "https://cdn.jsdelivr.net/gh/wasmdotrip/AmongUsPort@main/Build/AmongUsWeb.loader.js",
+          engine: "modern",
           unityConfig: function() {
             const BASE = "https://cdn.jsdelivr.net/gh/wasmdotrip/AmongUsPort@main";
             return {
@@ -475,19 +502,8 @@
             "https://wallpapercave.com/wp/wp7782554.jpg"
           ],
           loaderScript: "legacy/Build/UnityLoader.js",
-          unityConfig: function() {
-            const BASE = "legacy/Build";
-            const NAME = "AmongUSWebPortByTSProllyFinalBuild9";
-            return {
-              dataUrl: BASE + "/" + NAME + ".data.unityweb",
-              frameworkUrl: BASE + "/" + NAME + ".wasm.framework.unityweb",
-              codeUrl: BASE + "/" + NAME + ".wasm.code.unityweb",
-              streamingAssetsUrl: BASE,
-              companyName: "Innersloth",
-              productName: "Among Us",
-              productVersion: "Legacy"
-            };
-          }
+          engine: "legacy",
+          configFile: "legacy/Build/AmongUSWebPortByTSProllyFinalBuild9.json"
         }
       };
 
@@ -497,6 +513,7 @@
       ];
 
       const canvas = document.getElementById('game-canvas');
+      const unityContainer = document.getElementById('unity-container');
       const loadingBar = document.getElementById('loading-bar');
       const loadingText = document.getElementById('loading-text');
       const loadingPercent = document.getElementById('loading-percent');
@@ -538,7 +555,6 @@
       setFavicon(PICKER_ICON);
 
       let selectedVersion = null;
-      let unityInstance = null;
 
       function loadScript(src) {
         return new Promise(function(resolve, reject) {
@@ -566,8 +582,14 @@
       function finishLoading() {
         setProgress(1, 'Ready!');
         setTimeout(function() {
-          canvas.classList.add('visible');
-          canvas.focus();
+          if (selectedVersion.engine === 'modern') {
+            canvas.classList.add('visible');
+            canvas.focus();
+          } else {
+            unityContainer.classList.add('visible');
+            const c = unityContainer.querySelector('canvas');
+            if (c) c.focus();
+          }
           loadingScreen.classList.add('fade-out');
           loadingScreen.addEventListener('transitionend', function() {
             loadingScreen.classList.add('hidden');
@@ -593,23 +615,53 @@
 
         loadScript(v.loaderScript)
           .then(function() {
-            if (typeof createUnityInstance !== 'function') {
-              throw new Error('Unity loader did not register createUnityInstance');
+            if (v.engine === 'modern') {
+              if (typeof createUnityInstance !== 'function') {
+                throw new Error('Modern Unity loader did not register createUnityInstance');
+              }
+              const config = v.unityConfig();
+              config.showBanner = function(message, type) {
+                if (type === 'error') console.error('[Unity]', message);
+                else console.warn('[Unity]', message);
+              };
+              return createUnityInstance(canvas, config, function(progress) {
+                if (progress < 0.05) setProgress(progress, 'Downloading game data…');
+                else if (progress < 0.7) setProgress(progress, 'Downloading assets…');
+                else if (progress < 0.95) setProgress(progress, 'Assembling data…');
+                else setProgress(progress, 'Starting game…');
+              });
+            } else {
+              if (typeof UnityLoader === 'undefined') {
+                throw new Error('Legacy Unity loader did not register UnityLoader');
+              }
+              return new Promise(function(resolve, reject) {
+                let resolved = false;
+                const instance = UnityLoader.instantiate(
+                  'unity-container',
+                  v.configFile,
+                  {
+                    onProgress: function(inst, progress) {
+                      if (progress < 0.05) setProgress(progress, 'Downloading game data…');
+                      else if (progress < 0.7) setProgress(progress, 'Downloading assets…');
+                      else if (progress < 0.95) setProgress(progress, 'Assembling data…');
+                      else setProgress(progress, 'Starting game…');
+                      if (progress >= 1 && !resolved) {
+                        resolved = true;
+                        resolve(inst || instance);
+                      }
+                    }
+                  }
+                );
+                setTimeout(function() {
+                  if (!resolved) {
+                    resolved = true;
+                    resolve(instance);
+                  }
+                }, 60000);
+              });
             }
-            const config = v.unityConfig();
-            config.showBanner = function(message, type) {
-              if (type === 'error') console.error('[Unity]', message);
-              else console.warn('[Unity]', message);
-            };
-            return createUnityInstance(canvas, config, function(progress) {
-              if (progress < 0.05) setProgress(progress, 'Downloading game data…');
-              else if (progress < 0.7) setProgress(progress, 'Downloading assets…');
-              else if (progress < 0.95) setProgress(progress, 'Assembling data…');
-              else setProgress(progress, 'Starting game…');
-            });
           })
-          .then(function(instance) {
-            unityInstance = instance;
+          .then(function() {
             finishLoading();
           })
           .catch(function(err) {
