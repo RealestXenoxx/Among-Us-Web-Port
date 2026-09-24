@@ -17,11 +17,14 @@
       #unityLogo { position: absolute; top: 42%; left: 50%; transform: translate(-50%, -50%); z-index: 5; pointer-events: none; }
     </style>
     <script>
+      let lastPostedProgress = 0;
       function postProgress(p, message) {
+        p = Math.max(lastPostedProgress, Math.max(0, Math.min(1, p)));
+        lastPostedProgress = p;
         try {
           window.parent.postMessage({
             type: 'amongus-progress',
-            progress: Math.max(0, Math.min(1, p)),
+            progress: p,
             message: message || ''
           }, '*');
         } catch (e) {}
