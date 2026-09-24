@@ -26,6 +26,26 @@
 
     #output { display: none; }
 
+    #game-canvas {
+      display: block;
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+      outline: 0;
+      background: #000;
+      z-index: 5;
+      visibility: hidden;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+
+    #game-canvas.visible {
+      visibility: visible;
+      opacity: 1;
+    }
+
     #loading-screen {
       position: fixed;
       inset: 0;
@@ -161,7 +181,7 @@
       background: linear-gradient(90deg, #222 0%, #888 50%, #222 100%);
       background-size: 200% 100%;
       animation: bar-shift 2.5s linear infinite;
-      transition: width 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+      transition: width 0.25s cubic-bezier(0.22, 1, 0.36, 1);
       box-shadow: 0 0 16px rgba(200,200,200,0.3), 0 0 32px rgba(150,150,150,0.15);
       filter: grayscale(1);
     }
@@ -365,33 +385,11 @@
       color: #ff9090;
       vertical-align: middle;
     }
-
-    #game-frame {
-      position: fixed;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      border: 0;
-      background: #000;
-      z-index: 5;
-      visibility: hidden;
-      opacity: 0;
-      transition: opacity 0.4s ease;
-    }
-
-    #game-frame.visible {
-      visibility: visible;
-      opacity: 1;
-    }
   </style>
 </head>
 <body>
 
-  <textarea id="output" rows="8"></textarea>
-
-  <iframe id="game-frame"
-          allow="autoplay; fullscreen; gamepad; xr-spatial-tracking; microphone; clipboard-write"
-          title="Among Us"></iframe>
+  <canvas id="game-canvas" tabindex="-1"></canvas>
 
   <div id="loading-screen">
     <div class="bg-layer" id="bg"></div>
@@ -420,7 +418,7 @@
                class="mini-favicon" alt="icon">
           <div class="loading-title" id="loading-title">Among Us</div>
         </div>
-        <div class="loading-mb" id="mb-text">0.0 / 42.5 MB</div>
+        <div class="loading-mb" id="mb-text">0.0 MB</div>
       </div>
 
       <div class="loading-bar-container">
@@ -447,26 +445,49 @@
 
       const VERSIONS = {
         latest: {
-          url: "https://wasm.rip/files/amongus/latest/",
           label: "Among Us · Latest",
-          sizeMB: 1100,      // 1.1 GB
-          duration: 25000,
+          approxSizeMB: 1100,
           icon: "https://play-lh.googleusercontent.com/pfGArJJx-vtMRVu2-ziedzAhTLsHgks6N3mNyyOC0oxRdsXINGwdd9h4ZutdTG7MfgiqlDXBXnk-kNo-Fns70Q=w240-h480-rw",
           backgrounds: [
             "https://storage.googleapis.com/stateless-thedailyfandom-org/2023/03/a4619101-cafe.webp",
             "https://static0.colliderimages.com/wordpress/wp-content/uploads/2024/03/among-us-social-featured.jpg"
-          ]
+          ],
+          loaderScript: "https://cdn.jsdelivr.net/gh/wasmdotrip/AmongUsPort@main/Build/AmongUsWeb.loader.js",
+          unityConfig: function() {
+            const BASE = "https://cdn.jsdelivr.net/gh/wasmdotrip/AmongUsPort@main";
+            return {
+              dataUrl: BASE + "/Build/AmongUsWeb.data",
+              frameworkUrl: BASE + "/Build/AmongUsWeb.framework.js",
+              codeUrl: BASE + "/Build/AmongUsWeb.wasm",
+              streamingAssetsUrl: BASE + "/StreamingAssets",
+              companyName: "Innersloth",
+              productName: "Among Us",
+              productVersion: "2026.6.5"
+            };
+          }
         },
         legacy: {
-          url: "https://wasm.rip/files/amongus/legacy/",
           label: "Among Us · Legacy",
-          sizeMB: 250,       // 250 MB
-          duration: 5000,
+          approxSizeMB: 250,
           icon: "https://www.rw-designer.com/icon-image/21508-256x256x32.png",
           backgrounds: [
             "https://wallpapers.com/images/featured/among-us-cb21ldue3llceiua.jpg",
             "https://wallpapercave.com/wp/wp7782554.jpg"
-          ]
+          ],
+          loaderScript: "legacy/Build/UnityLoader.js",
+          unityConfig: function() {
+            const BASE = "legacy/Build";
+            const NAME = "AmongUSWebPortByTSProllyFinalBuild9";
+            return {
+              dataUrl: BASE + "/" + NAME + ".data.unityweb",
+              frameworkUrl: BASE + "/" + NAME + ".wasm.framework.unityweb",
+              codeUrl: BASE + "/" + NAME + ".wasm.code.unityweb",
+              streamingAssetsUrl: BASE,
+              companyName: "Innersloth",
+              productName: "Among Us",
+              productVersion: "Legacy"
+            };
+          }
         }
       };
 
@@ -475,6 +496,7 @@
         "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/06c35458-d939-41ba-9f21-97ddba28b8bd/dfuj1pk-aa3b7faf-271e-4911-ba5f-5c9adcaf2482.png/v1/fill/w_1191,h_671,q_70,strp/_fnf_remade_reactor_background_by_205tob_dfuj1pk-pre.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9NzIxIiwicGF0aCI6Ii9mLzA2YzM1NDU4LWQ5MzktNDFiYS05ZjIxLTk3ZGRiYTI4YjhiZC9kZnVqMXBrLWFhM2I3ZmFmLTI3MWUtNDkxMS1iYTVmLTVjOWFkY2FmMjQ4Mi5wbmciLCJ3aWR0aCI6Ijw9MTI4MCJ9XV0sImF1ZCI6WyJ1cm46c2VydmljZTppbWFnZS5vcGVyYXRpb25zIl19.OAuFoOoDIfFsfIPa0o8NGXYV_0C_qLxSsId09z6iWD8"
       ];
 
+      const canvas = document.getElementById('game-canvas');
       const loadingBar = document.getElementById('loading-bar');
       const loadingText = document.getElementById('loading-text');
       const loadingPercent = document.getElementById('loading-percent');
@@ -483,7 +505,6 @@
       const loadingContent = document.getElementById('loading-content');
       const loadingTitle = document.getElementById('loading-title');
       const versionPicker = document.getElementById('version-picker');
-      const gameFrame = document.getElementById('game-frame');
       const bgLayer = document.getElementById('bg');
       const favicon = document.getElementById('favicon');
       const miniIcon = document.getElementById('mini-icon');
@@ -509,9 +530,7 @@
       }
 
       function formatMB(mb) {
-        if (mb >= 1000) {
-          return (mb / 1000).toFixed(1) + ' GB';
-        }
+        if (mb >= 1000) return (mb / 1000).toFixed(2) + ' GB';
         return mb.toFixed(1) + ' MB';
       }
 
@@ -519,16 +538,48 @@
       setFavicon(PICKER_ICON);
 
       let selectedVersion = null;
+      let unityInstance = null;
 
-      function startLoading(versionKey) {
+      function loadScript(src) {
+        return new Promise(function(resolve, reject) {
+          const s = document.createElement('script');
+          s.src = src;
+          s.onload = resolve;
+          s.onerror = function() { reject(new Error('Failed to load ' + src)); };
+          document.head.appendChild(s);
+        });
+      }
+
+      function setProgress(fraction, message) {
+        const percent = Math.max(0, Math.min(100, fraction * 100));
+        loadingBar.style.width = percent + '%';
+        loadingPercent.textContent = Math.round(percent) + '%';
+        const currentMB = fraction * selectedVersion.approxSizeMB;
+        mbText.textContent = formatMB(currentMB) + ' / ' + formatMB(selectedVersion.approxSizeMB);
+
+        if (percent > 0 && percent < 100) loadingBar.classList.add('active');
+        else if (percent >= 100) loadingBar.classList.remove('active');
+
+        if (message) loadingText.textContent = message;
+      }
+
+      function finishLoading() {
+        setProgress(1, 'Ready!');
+        setTimeout(function() {
+          canvas.classList.add('visible');
+          canvas.focus();
+          loadingScreen.classList.add('fade-out');
+          loadingScreen.addEventListener('transitionend', function() {
+            loadingScreen.classList.add('hidden');
+          }, { once: true });
+        }, 500);
+      }
+
+      function startVersion(versionKey) {
         const v = VERSIONS[versionKey];
-        selectedVersion = versionKey;
-
-        gameFrame.focus();
-
-        centerLogo.classList.add('zoomed');
+        selectedVersion = v;
         versionPicker.classList.add('hidden-picker');
-
+        centerLogo.classList.add('zoomed');
         setBackground(pickFromPool(v.backgrounds, 'lastBgAmong_' + versionKey));
         setFavicon(v.icon);
 
@@ -538,59 +589,40 @@
           loadingTitle.textContent = v.label;
         }, 500);
 
-        gameFrame.src = v.url;
+        setProgress(0, 'Downloading game files…');
 
-        const TOTAL_SIZE_MB = v.sizeMB;
-        const duration = v.duration;
-        const stepInterval = 60;
-        const totalSteps = duration / stepInterval;
-        let step = 0;
-
-        const interval = setInterval(function() {
-          step++;
-          const t = Math.min(1, step / totalSteps);
-          const eased = 1 - Math.pow(1 - t, 3);
-          const progress = eased * 100;
-
-          loadingBar.style.width = progress + '%';
-          loadingPercent.textContent = Math.round(progress) + '%';
-          const currentMB = progress / 100 * TOTAL_SIZE_MB;
-          mbText.textContent = formatMB(currentMB) + ' / ' + formatMB(TOTAL_SIZE_MB);
-
-          if (progress > 0 && progress < 100) loadingBar.classList.add('active');
-          else if (progress >= 100) loadingBar.classList.remove('active');
-
-          if (progress < 15) loadingText.textContent = 'Loading engine…';
-          else if (progress < 45) loadingText.textContent = 'Downloading assets…';
-          else if (progress < 75) loadingText.textContent = 'Assembling data…';
-          else if (progress < 100) loadingText.textContent = 'Almost there…';
-          else loadingText.textContent = 'Ready!';
-
-          if (step >= totalSteps) {
-            clearInterval(interval);
-            loadingBar.style.width = '100%';
-            loadingPercent.textContent = '100%';
-            mbText.textContent = formatMB(TOTAL_SIZE_MB) + ' / ' + formatMB(TOTAL_SIZE_MB);
-            loadingText.textContent = 'Ready!';
-            loadingBar.classList.remove('active');
-
-            setTimeout(function() {
-              gameFrame.classList.add('visible');
-              gameFrame.focus();
-              loadingScreen.classList.add('fade-out');
-              loadingScreen.addEventListener('transitionend', function() {
-                loadingScreen.classList.add('hidden');
-              }, { once: true });
-            }, 800);
-          }
-        }, stepInterval);
+        loadScript(v.loaderScript)
+          .then(function() {
+            if (typeof createUnityInstance !== 'function') {
+              throw new Error('Unity loader did not register createUnityInstance');
+            }
+            const config = v.unityConfig();
+            config.showBanner = function(message, type) {
+              if (type === 'error') console.error('[Unity]', message);
+              else console.warn('[Unity]', message);
+            };
+            return createUnityInstance(canvas, config, function(progress) {
+              if (progress < 0.05) setProgress(progress, 'Downloading game data…');
+              else if (progress < 0.7) setProgress(progress, 'Downloading assets…');
+              else if (progress < 0.95) setProgress(progress, 'Assembling data…');
+              else setProgress(progress, 'Starting game…');
+            });
+          })
+          .then(function(instance) {
+            unityInstance = instance;
+            finishLoading();
+          })
+          .catch(function(err) {
+            console.error(err);
+            loadingText.textContent = 'Failed to load: ' + err.message;
+          });
       }
 
       versionPicker.addEventListener('click', function(e) {
         const btn = e.target.closest('.version-btn');
         if (!btn) return;
         if (selectedVersion) return;
-        startLoading(btn.dataset.version);
+        startVersion(btn.dataset.version);
       });
 
       (function() {
@@ -600,15 +632,11 @@
           titleEl.textContent = DESIRED_TITLE;
         }
         var observer = new MutationObserver(function() {
-          if (document.title !== DESIRED_TITLE) {
-            document.title = DESIRED_TITLE;
-          }
+          if (document.title !== DESIRED_TITLE) document.title = DESIRED_TITLE;
         });
         observer.observe(titleEl, { childList: true, characterData: true, subtree: true });
         var headObserver = new MutationObserver(function() {
-          if (document.title !== DESIRED_TITLE) {
-            document.title = DESIRED_TITLE;
-          }
+          if (document.title !== DESIRED_TITLE) document.title = DESIRED_TITLE;
         });
         headObserver.observe(document.head, { childList: true, subtree: true });
       })();
