@@ -501,15 +501,17 @@
           return;
         }
         if (!event.data || event.data.type !== 'amongus-progress') return;
-        const p = event.data.progress;
-        const msg = event.data.message;
-        if (p > lastProgress) lastProgress = p;
-        setProgress(p, msg);
+        const p = Math.max(lastProgress, event.data.progress);
+        lastProgress = p;
+        setProgress(p, event.data.message);
         if (p >= 1) finishLoading();
       });
 
       function setProgress(fraction, message) {
-        const percent = Math.max(0, Math.min(100, fraction * 100));
+        fraction = Math.max(lastProgress, Math.min(1, fraction));
+        lastProgress = fraction;
+
+        const percent = fraction * 100;
         loadingBar.style.width = percent + '%';
         loadingPercent.textContent = Math.round(percent) + '%';
         const currentMB = fraction * selectedVersion.approxSizeMB;
