@@ -367,20 +367,6 @@
       color: rgba(255,255,255,0.65);
       letter-spacing: 0.2px;
     }
-
-    .version-btn.latest .v-title::after {
-      content: "NEW";
-      margin-left: 10px;
-      font-size: 10px;
-      font-weight: 800;
-      letter-spacing: 0.8px;
-      padding: 3px 7px;
-      border-radius: 6px;
-      background: rgba(255, 90, 90, 0.18);
-      border: 1px solid rgba(255, 90, 90, 0.45);
-      color: #ff9090;
-      vertical-align: middle;
-    }
   </style>
 </head>
 <body>
@@ -400,11 +386,11 @@
     <div id="version-picker">
       <button class="version-btn latest" data-version="latest">
         <span class="v-title">Among Us · Latest</span>
-        <span class="v-sub">Newest PC build · 2026.6.5</span>
+        <span class="v-sub">2026 Build</span>
       </button>
       <button class="version-btn legacy" data-version="legacy">
         <span class="v-title">Among Us · Legacy</span>
-        <span class="v-sub">Classic web port</span>
+        <span class="v-sub">2019 Build</span>
       </button>
     </div>
 
@@ -510,6 +496,10 @@
       let lastProgress = 0;
 
       window.addEventListener('message', function(event) {
+        if (event.data && event.data.type === 'amongus-exit') {
+          location.reload();
+          return;
+        }
         if (!event.data || event.data.type !== 'amongus-progress') return;
         const p = event.data.progress;
         const msg = event.data.message;
@@ -563,7 +553,6 @@
         setProgress(0, 'Downloading game files…');
         gameFrame.src = v.iframeUrl;
 
-        // Safety: if progress hasn't reached 1 after 5 minutes, force finish
         setTimeout(function() {
           if (!finished) {
             console.warn('Safety timeout — revealing game');
