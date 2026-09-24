@@ -33,11 +33,15 @@
     const BrowserXMLHttpRequest = window.XMLHttpRequest;
     let assembledBundleUrl = null;
 
+    let lastPostedProgress = 0;
     function postProgress(percent, message) {
+      const normalized = Math.max(0, Math.min(1, percent / 100));
+      const clamped = Math.max(lastPostedProgress, normalized);
+      lastPostedProgress = clamped;
       try {
         window.parent.postMessage({
           type: 'amongus-progress',
-          progress: Math.max(0, Math.min(1, percent / 100)),
+          progress: clamped,
           message: message || ''
         }, '*');
       } catch (e) {}
