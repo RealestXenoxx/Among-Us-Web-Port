@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-  <title>Among Us · Legacy</title>
+  <title>Among Us</title>
 
   <link rel="icon" type="image/jpeg" href="among-us-icon.jpg" />
 
@@ -20,6 +20,7 @@
       background-color: #000;
       font-family: 'Inter', sans-serif;
       text-align: center;
+      color: #fff;
     }
 
     #output { display: none; }
@@ -50,7 +51,7 @@
 
     .center-logo {
       position: absolute;
-      top: 32%;
+      top: 28%;
       left: 50%;
       transform: translate(-50%, -50%);
       z-index: 3;
@@ -277,6 +278,75 @@
       50% { opacity: 1; transform: scale(1.2); }
     }
 
+    /* ---- VERSION PICKER ---- */
+    #version-picker {
+      position: absolute;
+      top: 58%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 4;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      width: min(420px, 82vw);
+    }
+
+    .version-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+      padding: 18px 22px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(16, 18, 26, 0.78);
+      color: #fff;
+      font-family: inherit;
+      text-align: left;
+      cursor: pointer;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      box-shadow:
+        0 12px 32px rgba(0, 0, 0, 0.6),
+        0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+      transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    }
+
+    .version-btn:hover {
+      transform: translateY(-2px);
+      border-color: rgba(255,255,255,0.28);
+      background: rgba(24, 28, 40, 0.85);
+    }
+
+    .version-btn:active { transform: translateY(0); }
+
+    .version-btn .v-title {
+      font-size: 17px;
+      font-weight: 800;
+      letter-spacing: 0.3px;
+    }
+
+    .version-btn .v-sub {
+      font-size: 12.5px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.65);
+      letter-spacing: 0.2px;
+    }
+
+    .version-btn.latest .v-title::after {
+      content: "NEW";
+      margin-left: 10px;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.8px;
+      padding: 3px 7px;
+      border-radius: 6px;
+      background: rgba(255, 90, 90, 0.18);
+      border: 1px solid rgba(255, 90, 90, 0.45);
+      color: #ff9090;
+      vertical-align: middle;
+    }
+
     #game-frame {
       position: fixed;
       inset: 0;
@@ -285,7 +355,10 @@
       border: 0;
       background: #000;
       z-index: 10;
+      display: none;
     }
+
+    #game-frame.visible { display: block; }
   </style>
 </head>
 <body>
@@ -297,14 +370,25 @@
 
     <img class="center-logo"
          src="among-us-logo.jpg"
-         alt="Among Us Legacy">
+         alt="Among Us">
 
-    <div class="loading-content">
+    <div id="version-picker">
+      <button class="version-btn latest" data-version="latest">
+        <span class="v-title">Among Us · Latest</span>
+        <span class="v-sub">Newest PC build · 2026.6.5</span>
+      </button>
+      <button class="version-btn legacy" data-version="legacy">
+        <span class="v-title">Among Us · Legacy</span>
+        <span class="v-sub">Classic web port</span>
+      </button>
+    </div>
+
+    <div class="loading-content" id="loading-content" style="display:none;">
       <div class="loading-header">
         <div class="title-group">
           <img src="among-us-icon.jpg"
                class="mini-favicon" alt="icon">
-          <div class="loading-title">Among Us · Legacy</div>
+          <div class="loading-title" id="loading-title">Among Us</div>
         </div>
         <div class="loading-mb" id="mb-text">0.0 / 42.5 MB</div>
       </div>
@@ -327,18 +411,31 @@
     </div>
   </div>
 
-  <iframe id="game-frame" src="https://wasm.rip/files/amongus/legacy/"
+  <iframe id="game-frame"
           allow="autoplay; fullscreen; gamepad; xr-spatial-tracking"
-          title="Among Us Legacy"></iframe>
+          title="Among Us"></iframe>
 
   <script>
     (function() {
-      const TOTAL_SIZE_MB = 42.5;
+      const VERSIONS = {
+        latest: { url: "https://wasm.rip/files/amongus/latest/", label: "Among Us · Latest", size: 100.0 },
+        legacy: { url: "https://wasm.rip/files/amongus/legacy/", label: "Among Us · Legacy", size: 42.5 }
+      };
 
       const BACKGROUNDS = [
         "https://wallpapers.com/images/featured/among-us-cb21ldue3llceiua.jpg",
         "https://wallpapercave.com/wp/wp7782554.jpg"
       ];
+
+      const loadingBar = document.getElementById('loading-bar');
+      const loadingText = document.getElementById('loading-text');
+      const loadingPercent = document.getElementById('loading-percent');
+      const mbText = document.getElementById('mb-text');
+      const loadingScreen = document.getElementById('loading-screen');
+      const loadingContent = document.getElementById('loading-content');
+      const loadingTitle = document.getElementById('loading-title');
+      const versionPicker = document.getElementById('version-picker');
+      const gameFrame = document.getElementById('game-frame');
 
       function pickBackground() {
         const last = sessionStorage.getItem('lastBgAmong');
@@ -349,46 +446,61 @@
         sessionStorage.setItem('lastBgAmong', String(index));
         return BACKGROUNDS[index];
       }
-
       document.getElementById('bg').style.backgroundImage =
         'url("' + pickBackground() + '")';
 
-      const loadingBar = document.getElementById('loading-bar');
-      const loadingText = document.getElementById('loading-text');
-      const loadingPercent = document.getElementById('loading-percent');
-      const mbText = document.getElementById('mb-text');
-      const loadingScreen = document.getElementById('loading-screen');
+      let selectedVersion = null;
 
-      let progress = 0;
-      const interval = setInterval(function() {
-        progress += Math.random() * 8 + 4;
-        if (progress > 100) progress = 100;
+      function startLoading(versionKey) {
+        const v = VERSIONS[versionKey];
+        selectedVersion = versionKey;
 
-        loadingBar.style.width = progress + '%';
-        loadingPercent.textContent = Math.round(progress) + '%';
-        mbText.textContent = (progress / 100 * TOTAL_SIZE_MB).toFixed(1) + ' / ' + TOTAL_SIZE_MB.toFixed(1) + ' MB';
+        versionPicker.style.display = 'none';
+        loadingContent.style.display = 'flex';
+        loadingTitle.textContent = v.label;
 
-        if (progress > 0 && progress < 100) loadingBar.classList.add('active');
-        else if (progress >= 100) loadingBar.classList.remove('active');
+        let progress = 0;
+        const TOTAL_SIZE_MB = v.size;
 
-        if (progress < 30) loadingText.textContent = 'Loading engine…';
-        else if (progress < 70) loadingText.textContent = 'Downloading assets…';
-        else if (progress < 100) loadingText.textContent = 'Almost there…';
-        else loadingText.textContent = 'Ready!';
+        const interval = setInterval(function() {
+          progress += Math.random() * 8 + 4;
+          if (progress > 100) progress = 100;
 
-        if (progress >= 100) {
-          clearInterval(interval);
-          setTimeout(function() {
-            loadingScreen.classList.add('fade-out');
-            loadingScreen.addEventListener('transitionend', function() {
-              loadingScreen.classList.add('hidden');
-            }, { once: true });
-          }, 800);
-        }
-      }, 120);
+          loadingBar.style.width = progress + '%';
+          loadingPercent.textContent = Math.round(progress) + '%';
+          mbText.textContent = (progress / 100 * TOTAL_SIZE_MB).toFixed(1) + ' / ' + TOTAL_SIZE_MB.toFixed(1) + ' MB';
+
+          if (progress > 0 && progress < 100) loadingBar.classList.add('active');
+          else if (progress >= 100) loadingBar.classList.remove('active');
+
+          if (progress < 30) loadingText.textContent = 'Loading engine…';
+          else if (progress < 70) loadingText.textContent = 'Downloading assets…';
+          else if (progress < 100) loadingText.textContent = 'Almost there…';
+          else loadingText.textContent = 'Ready!';
+
+          if (progress >= 100) {
+            clearInterval(interval);
+            setTimeout(function() {
+              gameFrame.src = v.url;
+              gameFrame.classList.add('visible');
+              loadingScreen.classList.add('fade-out');
+              loadingScreen.addEventListener('transitionend', function() {
+                loadingScreen.classList.add('hidden');
+              }, { once: true });
+            }, 800);
+          }
+        }, 120);
+      }
+
+      versionPicker.addEventListener('click', function(e) {
+        const btn = e.target.closest('.version-btn');
+        if (!btn) return;
+        if (selectedVersion) return;
+        startLoading(btn.dataset.version);
+      });
 
       (function() {
-        var DESIRED_TITLE = 'Among Us · Legacy';
+        var DESIRED_TITLE = 'Among Us';
         var titleEl = document.querySelector('title');
         if (titleEl && titleEl.textContent !== DESIRED_TITLE) {
           titleEl.textContent = DESIRED_TITLE;
