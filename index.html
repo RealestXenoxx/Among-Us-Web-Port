@@ -55,7 +55,7 @@
       position: absolute;
       top: 28%;
       left: 50%;
-      transform: translate(-50%, -50%);
+      transform: translate(-50%, -50%) scale(1);
       z-index: 3;
       width: min(780px, 90vw);
       max-height: 45vh;
@@ -66,7 +66,15 @@
       filter:
         drop-shadow(0 12px 32px rgba(0, 0, 0, 0.85))
         drop-shadow(0 0 4px rgba(0, 0, 0, 0.95));
+      transition: transform 0.9s cubic-bezier(0.22, 1, 0.36, 1),
+                  top 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+      transform-origin: center center;
     }
+
+   .center-logo.zoomed {
+  top: 42%;
+  transform: translate(-50%, -50%) scale(1.35);
+}
 
     #loading-screen.fade-out { opacity: 0; pointer-events: none; }
     #loading-screen.hidden { display: none; }
@@ -293,6 +301,13 @@
       flex-direction: column;
       gap: 14px;
       width: min(420px, 82vw);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+
+    #version-picker.hidden-picker {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.92);
+      pointer-events: none;
     }
 
     .version-btn {
@@ -381,10 +396,10 @@
   <div id="loading-screen">
     <div class="bg-layer" id="bg"></div>
 
-   <img class="center-logo"
-     src="https://images.weserv.nl/?url=static.wikia.nocookie.net/disneyfanon/images/8/83/49EF6F10-40D3-4537-8833-819406CB00D2.png/revision/latest%3Fcb%3D20210520201231"
-     alt="Among Us"
-     onerror="this.onerror=null;this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Among_Us_Logo.svg/1280px-Among_Us_Logo.svg.png';">
+    <img class="center-logo" id="center-logo"
+         src="https://images.weserv.nl/?url=static.wikia.nocookie.net/disneyfanon/images/8/83/49EF6F10-40D3-4537-8833-819406CB00D2.png/revision/latest%3Fcb%3D20210520201231"
+         alt="Among Us"
+         onerror="this.onerror=null;this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Among_Us_Logo.svg/1280px-Among_Us_Logo.svg.png';">
 
     <div id="version-picker">
       <button class="version-btn latest" data-version="latest">
@@ -428,7 +443,6 @@
 
   <script>
     (function() {
-      const TITLE_LOGO = "https://images.weserv.nl/?url=static.wikia.nocookie.net/disneyfanon/images/8/83/49EF6F10-40D3-4537-8833-819406CB00D2.png/revision/latest%3Fcb%3D20210520201231";      
       const PICKER_ICON = "https://cdn.pixabay.com/photo/2021/02/23/16/55/among-us-6044054_640.png";
 
       const VERSIONS = {
@@ -473,6 +487,7 @@
       const bgLayer = document.getElementById('bg');
       const favicon = document.getElementById('favicon');
       const miniIcon = document.getElementById('mini-icon');
+      const centerLogo = document.getElementById('center-logo');
 
       function setBackground(url) {
         bgLayer.style.backgroundImage = 'url("' + url + '")';
@@ -502,12 +517,20 @@
         const v = VERSIONS[versionKey];
         selectedVersion = versionKey;
 
+        // Zoom in AND move logo to the vertical center of the screen
+        centerLogo.classList.add('zoomed');
+
+        // Fade out the version picker
+        versionPicker.classList.add('hidden-picker');
+
         setBackground(pickFromPool(v.backgrounds, 'lastBgAmong_' + versionKey));
         setFavicon(v.icon);
 
-        versionPicker.style.display = 'none';
-        loadingContent.style.display = 'flex';
-        loadingTitle.textContent = v.label;
+        setTimeout(function() {
+          versionPicker.style.display = 'none';
+          loadingContent.style.display = 'flex';
+          loadingTitle.textContent = v.label;
+        }, 500);
 
         gameFrame.src = v.url;
 
