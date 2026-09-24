@@ -71,10 +71,10 @@
       transform-origin: center center;
     }
 
-   .center-logo.zoomed {
-  top: 42%;
-  transform: translate(-50%, -50%) scale(1.35);
-}
+    .center-logo.zoomed {
+      top: 42%;
+      transform: translate(-50%, -50%) scale(1.35);
+    }
 
     #loading-screen.fade-out { opacity: 0; pointer-events: none; }
     #loading-screen.hidden { display: none; }
@@ -390,7 +390,7 @@
   <textarea id="output" rows="8"></textarea>
 
   <iframe id="game-frame"
-          allow="autoplay; fullscreen; gamepad; xr-spatial-tracking"
+          allow="autoplay; fullscreen; gamepad; xr-spatial-tracking; microphone; clipboard-write"
           title="Among Us"></iframe>
 
   <div id="loading-screen">
@@ -449,7 +449,7 @@
         latest: {
           url: "https://wasm.rip/files/amongus/latest/",
           label: "Among Us · Latest",
-          size: 100.0,
+          sizeMB: 1100,      // 1.1 GB
           duration: 25000,
           icon: "https://play-lh.googleusercontent.com/pfGArJJx-vtMRVu2-ziedzAhTLsHgks6N3mNyyOC0oxRdsXINGwdd9h4ZutdTG7MfgiqlDXBXnk-kNo-Fns70Q=w240-h480-rw",
           backgrounds: [
@@ -460,7 +460,7 @@
         legacy: {
           url: "https://wasm.rip/files/amongus/legacy/",
           label: "Among Us · Legacy",
-          size: 42.5,
+          sizeMB: 250,       // 250 MB
           duration: 5000,
           icon: "https://www.rw-designer.com/icon-image/21508-256x256x32.png",
           backgrounds: [
@@ -508,6 +508,13 @@
         return pool[index];
       }
 
+      function formatMB(mb) {
+        if (mb >= 1000) {
+          return (mb / 1000).toFixed(1) + ' GB';
+        }
+        return mb.toFixed(1) + ' MB';
+      }
+
       setBackground(pickFromPool(PICKER_BACKGROUNDS, 'lastBgPicker'));
       setFavicon(PICKER_ICON);
 
@@ -517,10 +524,9 @@
         const v = VERSIONS[versionKey];
         selectedVersion = versionKey;
 
-        // Zoom in AND move logo to the vertical center of the screen
-        centerLogo.classList.add('zoomed');
+        gameFrame.focus();
 
-        // Fade out the version picker
+        centerLogo.classList.add('zoomed');
         versionPicker.classList.add('hidden-picker');
 
         setBackground(pickFromPool(v.backgrounds, 'lastBgAmong_' + versionKey));
@@ -534,7 +540,7 @@
 
         gameFrame.src = v.url;
 
-        const TOTAL_SIZE_MB = v.size;
+        const TOTAL_SIZE_MB = v.sizeMB;
         const duration = v.duration;
         const stepInterval = 60;
         const totalSteps = duration / stepInterval;
@@ -548,7 +554,8 @@
 
           loadingBar.style.width = progress + '%';
           loadingPercent.textContent = Math.round(progress) + '%';
-          mbText.textContent = (progress / 100 * TOTAL_SIZE_MB).toFixed(1) + ' / ' + TOTAL_SIZE_MB.toFixed(1) + ' MB';
+          const currentMB = progress / 100 * TOTAL_SIZE_MB;
+          mbText.textContent = formatMB(currentMB) + ' / ' + formatMB(TOTAL_SIZE_MB);
 
           if (progress > 0 && progress < 100) loadingBar.classList.add('active');
           else if (progress >= 100) loadingBar.classList.remove('active');
@@ -563,12 +570,13 @@
             clearInterval(interval);
             loadingBar.style.width = '100%';
             loadingPercent.textContent = '100%';
-            mbText.textContent = TOTAL_SIZE_MB.toFixed(1) + ' / ' + TOTAL_SIZE_MB.toFixed(1) + ' MB';
+            mbText.textContent = formatMB(TOTAL_SIZE_MB) + ' / ' + formatMB(TOTAL_SIZE_MB);
             loadingText.textContent = 'Ready!';
             loadingBar.classList.remove('active');
 
             setTimeout(function() {
               gameFrame.classList.add('visible');
+              gameFrame.focus();
               loadingScreen.classList.add('fade-out');
               loadingScreen.addEventListener('transitionend', function() {
                 loadingScreen.classList.add('hidden');
