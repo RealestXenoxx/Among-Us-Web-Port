@@ -598,78 +598,123 @@
       }
 
       function startVersion(versionKey) {
-        const v = VERSIONS[versionKey];
-        selectedVersion = v;
-        versionPicker.classList.add('hidden-picker');
-        centerLogo.classList.add('zoomed');
-        setBackground(pickFromPool(v.backgrounds, 'lastBgAmong_' + versionKey));
-        setFavicon(v.icon);
+  const v = VERSIONS[versionKey];
+  selectedVersion = v;
+  versionPicker.classList.add('hidden-picker');
+  centerLogo.classList.add('zoomed');
+  setBackground(pickFromPool(v.backgrounds, 'lastBgAmong_' + versionKey));
+  setFavicon(v.icon);
 
-        setTimeout(function() {
-          versionPicker.style.display = 'none';
-          loadingContent.style.display = 'flex';
-          loadingTitle.textContent = v.label;
-        }, 500);
+  setTimeout(function() {
+    versionPicker.style.display = 'none';
+    loadingContent.style.display = 'flex';
+    loadingTitle.textContent = v.label;
+  }, 500);
 
-        setProgress(0, 'Downloading game files…');
+  setProgress(0, 'Downloading game files…');
 
-        loadScript(v.loaderScript)
-          .then(function() {
-            if (v.engine === 'modern') {
-              if (typeof createUnityInstance !== 'function') {
-                throw new Error('Modern Unity loader did not register createUnityInstance');
-              }
-              const config = v.unityConfig();
-              config.showBanner = function(message, type) {
-                if (type === 'error') console.error('[Unity]', message);
-                else console.warn('[Unity]', message);
-              };
-              return createUnityInstance(canvas, config, function(progress) {
-                if (progress < 0.05) setProgress(progress, 'Downloading game data…');
-                else if (progress < 0.7) setProgress(progress, 'Downloading assets…');
-                else if (progress < 0.95) setProgress(progress, 'Assembling data…');
-                else setProgress(progress, 'Starting game…');
-              });
-            } else {
-              if (typeof UnityLoader === 'undefined') {
-                throw new Error('Legacy Unity loader did not register UnityLoader');
-              }
-              return new Promise(function(resolve, reject) {
-                let resolved = false;
-                const instance = UnityLoader.instantiate(
-                  'unity-container',
-                  v.configFile,
-                  {
-                    onProgress: function(inst, progress) {
-                      if (progress < 0.05) setProgress(progress, 'Downloading game data…');
-                      else if (progress < 0.7) setProgress(progress, 'Downloading assets…');
-                      else if (progress < 0.95) setProgress(progress, 'Assembling data…');
-                      else setProgress(progress, 'Starting game…');
-                      if (progress >= 1 && !resolved) {
-                        resolved = true;
-                        resolve(inst || instance);
-                      }
-                    }
-                  }
-                );
-                setTimeout(function() {
-                  if (!resolved) {
-                    resolved = true;
-                    resolve(instance);
-                  }
-                }, 60000);
-              });
-            }
-          })
-          .then(function() {
-            finishLoading();
-          })
-          .catch(function(err) {
-            console.error(err);
-            loadingText.textContent = 'Failed to load: ' + err.message;
-          });
+  let lastRealProgress = 0;
+  let lastProgressTime = Date.now();
+  const STALL_TIMEOUT = 4000;
+  const STALL_MAX = 0.98;
+  let creepInterval = null;
+
+  function noteRealProgress(p) {
+    if (p > lastRealProgress) {
+      lastRealProgress = p;
+      lastProgressTime = Date.now();
+      if (creepInterval) {
+        clearInterval(creepInterval);
+        creepInterval = null;
       }
+    }
+  }
 
+  function startCreep() {
+    if (creepInterval) return;
+    creepInterval = setInterval(function() {
+      if (lastRealProgress >= 1) {
+        clearInterval(creepInterval);
+        creepInterval = null;
+        return;
+      }
+      lastRealProgress = Math.min(STALL_MAX, lastRealProgress + 0.0015);
+      setProgress(lastRealProgress, 'Almost done…');
+    }, 200);
+  }
+
+  // Watchdog: starts creep mode if progress has been stuck
+  const watchdog = setInterval(function() {
+    if (Date.now() - lastProgressTime > STALL_TIMEOUT && lastRealProgress > 0.85) {
+      startCreep();
+    }
+  }, 1000);
+
+  function cleanup() {
+    if (creepInterval) clearInterval(creepInterval);
+    clearInterval(watchdog);
+  }
+
+  loadScript(v.loaderScript)
+    .then(function() {
+      if (v.engine === 'modern') {
+        if (typeof createUnityInstance !== 'function') {
+          throw new Error('Modern Unity loader did not register createUnityInstance');
+        }
+        const config = v.unityConfig();
+        config.showBanner = function(message, type) {
+          if (type === 'error') console.error('[Unity]', message);
+          else console.warn('[Unity]', message);
+        };
+        return createUnityInstance(canvas, config, function(progress) {
+          noteRealProgress(progress);
+          setProgress(progress, progress < 0.05 ? 'Downloading game data…'
+                              : progress < 0.7 ? 'Downloading assets…'
+                              : progress < 0.95 ? 'Assembling data…'
+                              : 'Starting game…');
+        });
+      } else {
+        if (typeof UnityLoader === 'undefined') {
+          throw new Error('Legacy Unity loader did not register UnityLoader');
+        }
+        return new Promise(function(resolve) {
+          let resolved = false;
+          const instance = UnityLoader.instantiate(
+            'unity-container',
+            v.configFile,
+            {
+              onProgress: function(inst, progress) {
+                noteRealProgress(progress);
+                setProgress(progress, progress < 0.05 ? 'Downloading game data…'
+                                    : progress < 0.7 ? 'Downloading assets…'
+                                    : progress < 0.95 ? 'Assembling data…'
+                                    : 'Starting game…');
+                if (progress >= 1 && !resolved) {
+                  resolved = true;
+                  resolve(inst || instance);
+                }
+              }
+            }
+          );
+          setTimeout(function() {
+            if (!resolved) {
+              resolved = true;
+              resolve(instance);
+            }
+          }, 180000);
+        });
+      }
+    })
+    .then(function() {
+      cleanup();
+      finishLoading();
+    })
+    .catch(function(err) {
+      cleanup();
+      console.error(err);
+      loadingText.textContent = 'Failed to load: ' + err.message;
+    });
+}
       versionPicker.addEventListener('click', function(e) {
         const btn = e.target.closest('.version-btn');
         if (!btn) return;
