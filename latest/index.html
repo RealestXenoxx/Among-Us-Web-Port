@@ -8,7 +8,7 @@
     html,body,#game{width:100%;height:100%;margin:0;overflow:hidden;background:#000}
     #game{position:fixed;inset:0}
     #unity-canvas{display:block;width:100%;height:100%;border:0;outline:0;background:#000}
-    #loader{position:fixed;inset:0;z-index:2;display:grid;place-items:center;background:#000;color:#fff;font:16px Arial,sans-serif}
+    #loader{position:fixed;inset:0;z-index:2;display:none;place-items:center;background:#000;color:#fff;font:16px Arial,sans-serif}
     #loader-box{width:min(440px,82vw);text-align:center}
     #bar{height:12px;margin-top:12px;overflow:hidden;border:1px solid #777;border-radius:8px}
     #fill{width:0;height:100%;background:#35d0ba;transition:width .12s linear}
@@ -33,9 +33,20 @@
     const BrowserXMLHttpRequest = window.XMLHttpRequest;
     let assembledBundleUrl = null;
 
+    function postProgress(percent, message) {
+      try {
+        window.parent.postMessage({
+          type: 'amongus-progress',
+          progress: Math.max(0, Math.min(1, percent / 100)),
+          message: message || ''
+        }, '*');
+      } catch (e) {}
+    }
+
     function updateProgress(percent, message) {
       fill.style.width = Math.max(0, Math.min(100, percent)) + "%";
       if (message) statusText.textContent = message;
+      postProgress(percent, message);
     }
 
     const CACHE_DB = "amongus-web-cache";
@@ -252,12 +263,20 @@
       updateProgress(70, "Starting game…");
       await createUnityInstance(canvas, config, value => updateProgress(70 + value * 30, "Starting game…"));
       loader.style.display = "none";
+      updateProgress(100, "Ready!");
     }
 
     start().catch(error => {
       statusText.textContent = "Unable to start the game.";
       errorText.textContent = error && error.message ? error.message : String(error);
       console.error(error);
+      try {
+        window.parent.postMessage({
+          type: 'amongus-progress',
+          progress: 1,
+          message: 'Error: ' + (error && error.message ? error.message : 'Unknown')
+        }, '*');
+      } catch (e) {}
     });
   </script>
 </body>
