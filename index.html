@@ -24,51 +24,22 @@
       color: #fff;
     }
 
-    #output { display: none; }
-
-    /* Modern (Latest) renders into this canvas directly */
-    #game-canvas {
-      display: block;
+    #game-frame {
       position: fixed;
       inset: 0;
       width: 100%;
       height: 100%;
       border: 0;
-      outline: 0;
       background: #000;
       z-index: 5;
       visibility: hidden;
       opacity: 0;
-      transition: opacity 0.4s ease;
+      transition: opacity 0.5s ease;
     }
 
-    #game-canvas.visible {
+    #game-frame.visible {
       visibility: visible;
       opacity: 1;
-    }
-
-    /* Legacy creates its own canvas inside this container */
-    #unity-container {
-      position: fixed;
-      inset: 0;
-      z-index: 5;
-      background: #000;
-      visibility: hidden;
-      opacity: 0;
-      transition: opacity 0.4s ease;
-    }
-
-    #unity-container.visible {
-      visibility: visible;
-      opacity: 1;
-    }
-
-    #unity-container canvas {
-      display: block !important;
-      width: 100% !important;
-      height: 100% !important;
-      border: 0 !important;
-      outline: 0 !important;
     }
 
     #loading-screen {
@@ -206,7 +177,7 @@
       background: linear-gradient(90deg, #222 0%, #888 50%, #222 100%);
       background-size: 200% 100%;
       animation: bar-shift 2.5s linear infinite;
-      transition: width 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+      transition: width 0.3s cubic-bezier(0.22, 1, 0.36, 1);
       box-shadow: 0 0 16px rgba(200,200,200,0.3), 0 0 32px rgba(150,150,150,0.15);
       filter: grayscale(1);
     }
@@ -414,8 +385,9 @@
 </head>
 <body>
 
-  <div id="unity-container"></div>
-  <canvas id="game-canvas" tabindex="-1"></canvas>
+  <iframe id="game-frame"
+          allow="autoplay; fullscreen; gamepad; xr-spatial-tracking; microphone; clipboard-write"
+          title="Among Us"></iframe>
 
   <div id="loading-screen">
     <div class="bg-layer" id="bg"></div>
@@ -478,20 +450,7 @@
             "https://storage.googleapis.com/stateless-thedailyfandom-org/2023/03/a4619101-cafe.webp",
             "https://static0.colliderimages.com/wordpress/wp-content/uploads/2024/03/among-us-social-featured.jpg"
           ],
-          loaderScript: "https://cdn.jsdelivr.net/gh/wasmdotrip/AmongUsPort@main/Build/AmongUsWeb.loader.js",
-          engine: "modern",
-          unityConfig: function() {
-            const BASE = "https://cdn.jsdelivr.net/gh/wasmdotrip/AmongUsPort@main";
-            return {
-              dataUrl: BASE + "/Build/AmongUsWeb.data",
-              frameworkUrl: BASE + "/Build/AmongUsWeb.framework.js",
-              codeUrl: BASE + "/Build/AmongUsWeb.wasm",
-              streamingAssetsUrl: BASE + "/StreamingAssets",
-              companyName: "Innersloth",
-              productName: "Among Us",
-              productVersion: "2026.6.5"
-            };
-          }
+          iframeUrl: "latest/index.html"
         },
         legacy: {
           label: "Among Us · Legacy",
@@ -501,9 +460,7 @@
             "https://wallpapers.com/images/featured/among-us-cb21ldue3llceiua.jpg",
             "https://wallpapercave.com/wp/wp7782554.jpg"
           ],
-          loaderScript: "legacy/Build/UnityLoader.js",
-          engine: "legacy",
-          configFile: "legacy/Build/AmongUSWebPortByTSProllyFinalBuild9.json"
+          iframeUrl: "legacy/index.html"
         }
       };
 
@@ -512,8 +469,7 @@
         "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/06c35458-d939-41ba-9f21-97ddba28b8bd/dfuj1pk-aa3b7faf-271e-4911-ba5f-5c9adcaf2482.png/v1/fill/w_1191,h_671,q_70,strp/_fnf_remade_reactor_background_by_205tob_dfuj1pk-pre.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9NzIxIiwicGF0aCI6Ii9mLzA2YzM1NDU4LWQ5MzktNDFiYS05ZjIxLTk3ZGRiYTI4YjhiZC9kZnVqMXBrLWFhM2I3ZmFmLTI3MWUtNDkxMS1iYTVmLTVjOWFkY2FmMjQ4Mi5wbmciLCJ3aWR0aCI6Ijw9MTI4MCJ9XV0sImF1ZCI6WyJ1cm46c2VydmljZTppbWFnZS5vcGVyYXRpb25zIl19.OAuFoOoDIfFsfIPa0o8NGXYV_0C_qLxSsId09z6iWD8"
       ];
 
-      const canvas = document.getElementById('game-canvas');
-      const unityContainer = document.getElementById('unity-container');
+      const gameFrame = document.getElementById('game-frame');
       const loadingBar = document.getElementById('loading-bar');
       const loadingText = document.getElementById('loading-text');
       const loadingPercent = document.getElementById('loading-percent');
@@ -530,22 +486,18 @@
       function setBackground(url) {
         bgLayer.style.backgroundImage = 'url("' + url + '")';
       }
-
       function setFavicon(url) {
         favicon.href = url;
         miniIcon.src = url;
       }
-
-      function pickFromPool(pool, storageKey) {
-        const last = sessionStorage.getItem(storageKey);
-        let index;
-        do {
-          index = Math.floor(Math.random() * pool.length);
-        } while (pool.length > 1 && String(index) === last);
-        sessionStorage.setItem(storageKey, String(index));
-        return pool[index];
+      function pickFromPool(pool, key) {
+        const last = sessionStorage.getItem(key);
+        let i;
+        do { i = Math.floor(Math.random() * pool.length); }
+        while (pool.length > 1 && String(i) === last);
+        sessionStorage.setItem(key, String(i));
+        return pool[i];
       }
-
       function formatMB(mb) {
         if (mb >= 1000) return (mb / 1000).toFixed(2) + ' GB';
         return mb.toFixed(1) + ' MB';
@@ -555,16 +507,16 @@
       setFavicon(PICKER_ICON);
 
       let selectedVersion = null;
+      let lastProgress = 0;
 
-      function loadScript(src) {
-        return new Promise(function(resolve, reject) {
-          const s = document.createElement('script');
-          s.src = src;
-          s.onload = resolve;
-          s.onerror = function() { reject(new Error('Failed to load ' + src)); };
-          document.head.appendChild(s);
-        });
-      }
+      window.addEventListener('message', function(event) {
+        if (!event.data || event.data.type !== 'amongus-progress') return;
+        const p = event.data.progress;
+        const msg = event.data.message;
+        if (p > lastProgress) lastProgress = p;
+        setProgress(p, msg);
+        if (p >= 1) finishLoading();
+      });
 
       function setProgress(fraction, message) {
         const percent = Math.max(0, Math.min(100, fraction * 100));
@@ -572,149 +524,54 @@
         loadingPercent.textContent = Math.round(percent) + '%';
         const currentMB = fraction * selectedVersion.approxSizeMB;
         mbText.textContent = formatMB(currentMB) + ' / ' + formatMB(selectedVersion.approxSizeMB);
-
         if (percent > 0 && percent < 100) loadingBar.classList.add('active');
         else if (percent >= 100) loadingBar.classList.remove('active');
-
         if (message) loadingText.textContent = message;
       }
 
+      let finished = false;
       function finishLoading() {
+        if (finished) return;
+        finished = true;
         setProgress(1, 'Ready!');
         setTimeout(function() {
-          if (selectedVersion.engine === 'modern') {
-            canvas.classList.add('visible');
-            canvas.focus();
-          } else {
-            unityContainer.classList.add('visible');
-            const c = unityContainer.querySelector('canvas');
-            if (c) c.focus();
-          }
+          gameFrame.classList.add('visible');
+          gameFrame.focus();
           loadingScreen.classList.add('fade-out');
           loadingScreen.addEventListener('transitionend', function() {
             loadingScreen.classList.add('hidden');
           }, { once: true });
-        }, 500);
+        }, 400);
       }
 
       function startVersion(versionKey) {
-  const v = VERSIONS[versionKey];
-  selectedVersion = v;
-  versionPicker.classList.add('hidden-picker');
-  centerLogo.classList.add('zoomed');
-  setBackground(pickFromPool(v.backgrounds, 'lastBgAmong_' + versionKey));
-  setFavicon(v.icon);
+        const v = VERSIONS[versionKey];
+        selectedVersion = v;
+        lastProgress = 0;
 
-  setTimeout(function() {
-    versionPicker.style.display = 'none';
-    loadingContent.style.display = 'flex';
-    loadingTitle.textContent = v.label;
-  }, 500);
+        versionPicker.classList.add('hidden-picker');
+        centerLogo.classList.add('zoomed');
+        setBackground(pickFromPool(v.backgrounds, 'lastBgAmong_' + versionKey));
+        setFavicon(v.icon);
 
-  setProgress(0, 'Downloading game files…');
+        setTimeout(function() {
+          versionPicker.style.display = 'none';
+          loadingContent.style.display = 'flex';
+          loadingTitle.textContent = v.label;
+        }, 500);
 
-  let lastRealProgress = 0;
-  let lastProgressTime = Date.now();
-  const STALL_TIMEOUT = 4000;
-  const STALL_MAX = 0.98;
-  let creepInterval = null;
+        setProgress(0, 'Downloading game files…');
+        gameFrame.src = v.iframeUrl;
 
-  function noteRealProgress(p) {
-    if (p > lastRealProgress) {
-      lastRealProgress = p;
-      lastProgressTime = Date.now();
-      if (creepInterval) {
-        clearInterval(creepInterval);
-        creepInterval = null;
+        // Safety: if progress hasn't reached 1 after 5 minutes, force finish
+        setTimeout(function() {
+          if (!finished) {
+            console.warn('Safety timeout — revealing game');
+            finishLoading();
+          }
+        }, 300000);
       }
-    }
-  }
 
-  function startCreep() {
-    if (creepInterval) return;
-    creepInterval = setInterval(function() {
-      if (lastRealProgress >= 1) {
-        clearInterval(creepInterval);
-        creepInterval = null;
-        return;
-      }
-      lastRealProgress = Math.min(STALL_MAX, lastRealProgress + 0.0015);
-      setProgress(lastRealProgress, 'Almost done…');
-    }, 200);
-  }
-
-  // Watchdog: starts creep mode if progress has been stuck
-  const watchdog = setInterval(function() {
-    if (Date.now() - lastProgressTime > STALL_TIMEOUT && lastRealProgress > 0.85) {
-      startCreep();
-    }
-  }, 1000);
-
-  function cleanup() {
-    if (creepInterval) clearInterval(creepInterval);
-    clearInterval(watchdog);
-  }
-
-  loadScript(v.loaderScript)
-    .then(function() {
-      if (v.engine === 'modern') {
-        if (typeof createUnityInstance !== 'function') {
-          throw new Error('Modern Unity loader did not register createUnityInstance');
-        }
-        const config = v.unityConfig();
-        config.showBanner = function(message, type) {
-          if (type === 'error') console.error('[Unity]', message);
-          else console.warn('[Unity]', message);
-        };
-        return createUnityInstance(canvas, config, function(progress) {
-          noteRealProgress(progress);
-          setProgress(progress, progress < 0.05 ? 'Downloading game data…'
-                              : progress < 0.7 ? 'Downloading assets…'
-                              : progress < 0.95 ? 'Assembling data…'
-                              : 'Starting game…');
-        });
-      } else {
-        if (typeof UnityLoader === 'undefined') {
-          throw new Error('Legacy Unity loader did not register UnityLoader');
-        }
-        return new Promise(function(resolve) {
-          let resolved = false;
-          const instance = UnityLoader.instantiate(
-            'unity-container',
-            v.configFile,
-            {
-              onProgress: function(inst, progress) {
-                noteRealProgress(progress);
-                setProgress(progress, progress < 0.05 ? 'Downloading game data…'
-                                    : progress < 0.7 ? 'Downloading assets…'
-                                    : progress < 0.95 ? 'Assembling data…'
-                                    : 'Starting game…');
-                if (progress >= 1 && !resolved) {
-                  resolved = true;
-                  resolve(inst || instance);
-                }
-              }
-            }
-          );
-          setTimeout(function() {
-            if (!resolved) {
-              resolved = true;
-              resolve(instance);
-            }
-          }, 180000);
-        });
-      }
-    })
-    .then(function() {
-      cleanup();
-      finishLoading();
-    })
-    .catch(function(err) {
-      cleanup();
-      console.error(err);
-      loadingText.textContent = 'Failed to load: ' + err.message;
-    });
-}
       versionPicker.addEventListener('click', function(e) {
         const btn = e.target.closest('.version-btn');
         if (!btn) return;
@@ -723,21 +580,13 @@
       });
 
       (function() {
-        var DESIRED_TITLE = 'Among Us';
-        var titleEl = document.querySelector('title');
-        if (titleEl && titleEl.textContent !== DESIRED_TITLE) {
-          titleEl.textContent = DESIRED_TITLE;
-        }
-        var observer = new MutationObserver(function() {
-          if (document.title !== DESIRED_TITLE) document.title = DESIRED_TITLE;
-        });
-        observer.observe(titleEl, { childList: true, characterData: true, subtree: true });
-        var headObserver = new MutationObserver(function() {
-          if (document.title !== DESIRED_TITLE) document.title = DESIRED_TITLE;
-        });
-        headObserver.observe(document.head, { childList: true, subtree: true });
+        var T = 'Among Us';
+        var el = document.querySelector('title');
+        if (el && el.textContent !== T) el.textContent = T;
+        new MutationObserver(function() {
+          if (document.title !== T) document.title = T;
+        }).observe(el, { childList: true, characterData: true, subtree: true });
       })();
-
     })();
   </script>
 </body>
